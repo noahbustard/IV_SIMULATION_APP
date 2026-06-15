@@ -17,6 +17,7 @@ const RESULT_HEADERS = [
   "Area of Nursing",
   "Years of Nursing Experience",
   "Medication",
+  "Administration Time Source",
   "Administration Time (seconds)",
   "Required Minimum Administration Time (seconds)",
   "Compliance Status",
@@ -24,7 +25,7 @@ const RESULT_HEADERS = [
   "Completed At",
 ] as const;
 
-const COLUMN_WIDTHS = [28, 20, 26, 18, 10, 18, 28, 28, 30, 62, 28, 44, 22, 34, 24];
+const COLUMN_WIDTHS = [28, 20, 26, 18, 10, 18, 28, 28, 30, 62, 32, 28, 44, 22, 34, 24];
 
 function ensureWorksheet(workbook: ExcelJS.Workbook, worksheetName: string) {
   const worksheet = workbook.addWorksheet(worksheetName);
@@ -54,6 +55,7 @@ function rowValues(record: SimulationResultRecord) {
     record.area_of_nursing ?? "",
     record.years_of_nursing_experience ?? "",
     record.medication,
+    record.administration_time_source,
     Number(record.administration_time_seconds),
     record.required_minimum_administration_time_seconds,
     record.compliance_status,

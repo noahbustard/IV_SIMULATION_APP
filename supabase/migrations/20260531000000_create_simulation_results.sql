@@ -14,6 +14,8 @@ create table if not exists public.simulation_results (
   area_of_nursing text,
   years_of_nursing_experience text,
   medication text not null,
+  administration_time_source text not null
+    check (administration_time_source in ('Administration Instructions', 'Additional Drug Information')),
   administration_time_seconds numeric not null,
   required_minimum_administration_time_seconds integer not null,
   compliance_status text not null,

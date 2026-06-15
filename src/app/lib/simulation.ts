@@ -11,6 +11,7 @@ export type Med = {
   administrationInstructions: string;
   referenceTitle: string;
   referenceBody: string;
+  administrationTimeSource: AdministrationTimeSource;
   requiredSeconds: number;
 };
 
@@ -32,6 +33,7 @@ export type Participant = {
 export type ParticipantErrors = Partial<Record<keyof Participant, string>>;
 
 export type ComplianceStatus = "In compliance" | "Not in compliance";
+export type AdministrationTimeSource = "Administration Instructions" | "Additional Drug Information";
 
 export const RUN_TYPE_LABELS = {
   training: "Training Run",
@@ -48,6 +50,7 @@ export type ExportRow = {
   areaOfNursing: string;
   yearsOfNursingExperience: string;
   medicationName: string;
+  administrationTimeSource: AdministrationTimeSource;
   medicationAdministrationTimeSeconds: number;
   requiredMinimumSeconds: number;
   complianceStatus: ComplianceStatus;
@@ -156,6 +159,7 @@ export const PRACTICE_MED: Med = {
   administrationInstructions: "Administer over 2 minutes.",
   referenceTitle: "Practice Medication Reference",
   referenceBody: "This is a sample medication used for the practice run. Administer the 2 mL dose slowly over 2 minutes.",
+  administrationTimeSource: "Administration Instructions",
   requiredSeconds: 120,
 };
 
@@ -173,6 +177,7 @@ export const MEDS: Med[] = [
     administrationInstructions: "Administer over 3 minutes.",
     referenceTitle: "Ondansetron Recommended Administration",
     referenceBody: "May be given undiluted. Administer 4 mg preferably over 3 minutes.",
+    administrationTimeSource: "Administration Instructions",
     requiredSeconds: 180,
   },
   {
@@ -188,6 +193,7 @@ export const MEDS: Med[] = [
     administrationInstructions: "Dilute to a concentration of 4 mg/mL prior to administration.",
     referenceTitle: "Famotidine Recommended Administration",
     referenceBody: "Dilute to a concentration no greater than 4 mg/mL. Administer 20 mg over 2 minutes.",
+    administrationTimeSource: "Additional Drug Information",
     requiredSeconds: 120,
   },
   {
@@ -203,6 +209,7 @@ export const MEDS: Med[] = [
     administrationInstructions: "",
     referenceTitle: "Hydromorphone Recommended Administration",
     referenceBody: "May be given undiluted. Administer 4 mg over 2 minutes.",
+    administrationTimeSource: "Additional Drug Information",
     requiredSeconds: 120,
   },
   {
@@ -218,6 +225,7 @@ export const MEDS: Med[] = [
     administrationInstructions: "Administer over 1.5 minutes.",
     referenceTitle: "Furosemide Recommended Administration",
     referenceBody: "May be given undiluted. Administer no faster than 20 mg/minute.",
+    administrationTimeSource: "Administration Instructions",
     requiredSeconds: 90,
   },
   {
@@ -233,6 +241,7 @@ export const MEDS: Med[] = [
     administrationInstructions: "Administer over 2 minutes",
     referenceTitle: "Pantoprazole Recommended Administration",
     referenceBody: "Reconstitute to a concentration of 4 mg/mL. Administer 40 mg over 2 minutes.",
+    administrationTimeSource: "Administration Instructions",
     requiredSeconds: 120,
   },
   {
@@ -248,6 +257,7 @@ export const MEDS: Med[] = [
     administrationInstructions: "Reconstitute with provided solution.",
     referenceTitle: "Methylprednisolone Recommended Administration",
     referenceBody: "Reconstitute with provided solution. Administer over 3 minutes.",
+    administrationTimeSource: "Additional Drug Information",
     requiredSeconds: 180,
   },
   {
@@ -263,6 +273,7 @@ export const MEDS: Med[] = [
     administrationInstructions: "Do not exceed 120 mg every 24 hours",
     referenceTitle: "Ketorolac Recommended Administration",
     referenceBody: "May be given undiluted. Administer over one minute.",
+    administrationTimeSource: "Additional Drug Information",
     requiredSeconds: 60,
   },
   {
@@ -278,6 +289,7 @@ export const MEDS: Med[] = [
     administrationInstructions: "Administer over 1 minute",
     referenceTitle: "Bumetanide Recommended Administration",
     referenceBody: "May be given undiluted. Administer slowly over 1 minute.",
+    administrationTimeSource: "Administration Instructions",
     requiredSeconds: 60,
   },
   {
@@ -293,6 +305,7 @@ export const MEDS: Med[] = [
     administrationInstructions: "Administer over 3 minutes",
     referenceTitle: "Phenytoin Recommended Administration",
     referenceBody: "Give undiluted. Administer no faster than 50 mg/minute.",
+    administrationTimeSource: "Administration Instructions",
     requiredSeconds: 180,
   },
   {
@@ -309,6 +322,7 @@ export const MEDS: Med[] = [
       "Dilute with equal amount of normal saline for injection. Notify the physician if seizure continues after two doses.",
     referenceTitle: "Lorazepam Recommended Administration",
     referenceBody: "Dilute with equal volume of diluent. Administer over 2 minutes.",
+    administrationTimeSource: "Additional Drug Information",
     requiredSeconds: 120,
   },
 ];

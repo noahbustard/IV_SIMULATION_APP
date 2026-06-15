@@ -45,11 +45,9 @@ function createRunId(runType: RunType) {
 
 function InfusionPanel({
   orderedAdminDose,
-  requiredSeconds,
   onChange,
 }: {
   orderedAdminDose: string;
-  requiredSeconds: number;
   onChange: (r: InfusionResult) => void;
 }) {
   const doseMl = parseMl(orderedAdminDose);
@@ -67,6 +65,7 @@ function InfusionPanel({
   const isHoldingRef = useMemo<{ current: boolean }>(() => ({ current: false }), []);
   const firstPushRef = useMemo<{ current: number | null }>(() => ({ current: null }), []);
   const remainingUnitsRef = useMemo<{ current: number }>(() => ({ current: totalUnits }), [totalUnits]);
+  const pressActiveRef = useRef(false);
 
   const complete = remainingUnits === 0;
 
@@ -118,7 +117,8 @@ function InfusionPanel({
   };
 
   const startHoldPush = () => {
-    if (complete || holdIntervalRef.current || holdStartTimeoutRef.current) return;
+    if (complete || pressActiveRef.current || holdIntervalRef.current || holdStartTimeoutRef.current) return;
+    pressActiveRef.current = true;
 
     holdStartTimeoutRef.current = setTimeout(() => {
       isHoldingRef.current = true;
@@ -140,7 +140,10 @@ function InfusionPanel({
     }, 180);
   };
 
-  const stopHoldPush = () => {
+  const finishPush = () => {
+    if (!pressActiveRef.current) return;
+    pressActiveRef.current = false;
+
     if (isHoldingRef.current) {
       clearHold();
       setFlowMode("idle");
@@ -156,6 +159,13 @@ function InfusionPanel({
     if (pushed) pulseFlow();
   };
 
+  const cancelPush = () => {
+    if (!pressActiveRef.current) return;
+    pressActiveRef.current = false;
+    clearHold();
+    setFlowMode("idle");
+  };
+
   useEffect(() => {
     onChange({ complete: false, elapsedSeconds: null, completedAt: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -165,6 +175,7 @@ function InfusionPanel({
     if (remainingUnits !== 0 || !firstPushAt) return;
     const finalElapsedMs = performance.now() - firstPushAt;
     setElapsedMs(finalElapsedMs);
+    pressActiveRef.current = false;
     clearHold();
     setFlowMode("idle");
     onChange({
@@ -192,6 +203,7 @@ function InfusionPanel({
   }, [showResetConfirm]);
 
   const reset = () => {
+    pressActiveRef.current = false;
     clearHold();
     firstPushRef.current = null;
     remainingUnitsRef.current = totalUnits;
@@ -238,10 +250,6 @@ function InfusionPanel({
   const activeStartPct = 100 / 6;
   const activeHeightPct = 100 - activeStartPct;
   const filledPct = (remainingMl / vialMl) * activeHeightPct;
-  const completionElapsedSeconds = elapsedMs / 1000;
-  const completionCompliance = complianceForElapsed(completionElapsedSeconds, requiredSeconds);
-  const isCompliant = completionCompliance === "In compliance";
-
   return (
     <div className="space-y-5 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
       <h3 className="text-xl font-semibold text-zinc-900">Syringe Infusion Trainer</h3>
@@ -374,62 +382,54 @@ function InfusionPanel({
         <p className="font-mono text-3xl font-bold text-zinc-900">{wallTimeLabel}</p>
       </div>
 
-      <div className="rounded-2xl border border-zinc-200 bg-zinc-950 p-4 text-center shadow-inner">
+      <div className="flex h-[112px] items-center rounded-2xl border border-zinc-200 bg-zinc-950 p-4 text-center shadow-inner">
         {!complete ? (
-          <div className="space-y-1">
+          <div className="w-full space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">Time since first push</p>
             <p className="font-mono text-6xl font-bold leading-none tracking-[0.08em] text-emerald-300 [text-shadow:0_0_10px_rgba(52,211,153,0.45)]">
               {String(elapsedMinutes).padStart(2, "0")}:{String(elapsedSeconds).padStart(2, "0")}
             </p>
           </div>
         ) : (
-          <div className="grid gap-2 sm:grid-cols-2 sm:gap-3">
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-2.5">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-400">Since first push</p>
-              <p className="font-mono text-[1.7rem] font-bold leading-none tracking-[0.08em] text-emerald-300">{formatElapsed(sinceFirstPushMs)}</p>
+          <div className="grid w-full grid-cols-2 items-center divide-x divide-zinc-700">
+            <div className="px-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Completion time</p>
+              <p className="mt-1 font-mono text-[2.75rem] font-bold leading-none tracking-[0.08em] text-cyan-300">{formatElapsed(completionMs)}</p>
             </div>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-2.5">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-400">Completion time</p>
-              <p className="font-mono text-[1.7rem] font-bold leading-none tracking-[0.08em] text-cyan-300">{formatElapsed(completionMs)}</p>
+            <div className="px-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Since first push</p>
+              <p className="mt-1 font-mono text-[2.75rem] font-bold leading-none tracking-[0.08em] text-emerald-300">{formatElapsed(sinceFirstPushMs)}</p>
             </div>
           </div>
         )}
       </div>
 
-      <div className={complete ? "grid grid-cols-1 gap-3" : "grid grid-cols-2 gap-3"}>
-        {complete ? (
-          <div
-            className={
-              "animate-pulse rounded-xl px-4 py-4 text-center text-sm font-semibold whitespace-nowrap shadow-sm " +
-              (isCompliant
-                ? "border border-emerald-300 bg-emerald-50 text-emerald-800 shadow-[0_0_18px_rgba(74,222,128,0.45)]"
-                : "border border-rose-300 bg-rose-50 text-rose-800 shadow-[0_0_18px_rgba(251,113,133,0.45)]")
-            }
-          >
-            Medication Infused - {completionCompliance}
-          </div>
-        ) : (
-          <button
-            onMouseDown={startHoldPush}
-            onMouseUp={stopHoldPush}
-            onMouseLeave={stopHoldPush}
-            onTouchStart={startHoldPush}
-            onTouchEnd={stopHoldPush}
-            onTouchCancel={stopHoldPush}
-            disabled={complete}
-            className="rounded-xl bg-blue-600 px-4 py-4 text-base font-bold text-white hover:bg-blue-500 disabled:opacity-40"
-          >
-            Push 0.1 mL
-          </button>
-        )}
-        {!complete && (
-          <button
-            onClick={() => setShowResetConfirm(true)}
-            className="rounded-xl bg-zinc-700 px-4 py-4 text-base font-bold text-white hover:bg-zinc-600"
-          >
-            Reset Dose
-          </button>
-        )}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onPointerDown={(event) => {
+            if (event.button === 0) startHoldPush();
+          }}
+          onPointerUp={finishPush}
+          onPointerLeave={cancelPush}
+          onPointerCancel={cancelPush}
+          disabled={complete}
+          className={
+            "touch-none select-none rounded-xl px-4 py-4 text-base font-bold " +
+            (complete
+              ? "cursor-not-allowed bg-zinc-300 text-zinc-500"
+              : "bg-blue-600 text-white hover:bg-blue-500")
+          }
+        >
+          Push 0.1 mL
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowResetConfirm(true)}
+          className="rounded-xl bg-zinc-700 px-4 py-4 text-base font-bold text-white hover:bg-zinc-600"
+        >
+          Reset Dose
+        </button>
       </div>
 
       <div className="rounded-xl border border-zinc-200 p-4 text-base">
@@ -604,6 +604,7 @@ export default function Home() {
           areaOfNursing: participant.areaOfNursing.trim(),
           yearsOfNursingExperience: participant.yearsOfNursingExperience.trim(),
           medicationName: entry.name,
+          administrationTimeSource: entry.administrationTimeSource,
           medicationAdministrationTimeSeconds: Number(result.elapsedSeconds.toFixed(2)),
           requiredMinimumSeconds: entry.requiredSeconds,
           complianceStatus: complianceForElapsed(result.elapsedSeconds, entry.requiredSeconds),
@@ -1112,6 +1113,7 @@ export default function Home() {
               <thead className="bg-zinc-50">
                 <tr>
                   <th className="px-4 py-3 font-semibold text-zinc-700">Medication</th>
+                  <th className="px-4 py-3 font-semibold text-zinc-700">Administration Time Source</th>
                   <th className="px-4 py-3 font-semibold text-zinc-700">Time (sec)</th>
                   <th className="px-4 py-3 font-semibold text-zinc-700">Minimum (sec)</th>
                   <th className="px-4 py-3 font-semibold text-zinc-700">Compliance</th>
@@ -1122,6 +1124,7 @@ export default function Home() {
                 {exportRows.map((row) => (
                   <tr key={row.medicationName}>
                     <td className="px-4 py-3 text-zinc-900">{row.medicationName}</td>
+                    <td className="px-4 py-3 text-zinc-700">{row.administrationTimeSource}</td>
                     <td className="px-4 py-3 font-semibold text-zinc-900">{row.medicationAdministrationTimeSeconds}</td>
                     <td className="px-4 py-3 text-zinc-700">{row.requiredMinimumSeconds}</td>
                     <td
@@ -1154,8 +1157,9 @@ export default function Home() {
   const isPractice = screen === "practice";
   const modeAccentClass = activeRunType === "training" ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-700";
   const panelBorderClass = activeRunType === "training" ? "border-amber-200" : "border-zinc-200";
-  const simulationMainClass = "min-h-screen bg-zinc-100 px-3 py-3 xl:min-h-screen xl:overflow-visible";
-  const simulationGridClass = "mx-auto grid max-w-[1900px] gap-3 xl:grid-cols-[minmax(0,1fr)_560px] xl:[zoom:0.8]";
+  const simulationMainClass = "min-h-screen bg-zinc-100 px-3 py-3 xl:h-screen xl:min-h-0 xl:overflow-hidden";
+  const simulationGridClass =
+    "mx-auto grid max-w-[1900px] gap-3 xl:grid-cols-[minmax(0,1fr)_560px] xl:[zoom:0.8] 2xl:[zoom:0.8] [@media(min-width:1800px)_and_(min-height:1000px)]:[zoom:0.99]";
 
   return (
     <main className={`${simulationMainClass} text-zinc-900`}>
@@ -1239,7 +1243,6 @@ export default function Home() {
           <InfusionPanel
             key={isPractice ? "practice" : index}
             orderedAdminDose={activeMed.orderedAdminDose}
-            requiredSeconds={activeMed.requiredSeconds}
             onChange={isPractice ? handlePracticeChange : handleInfusionChange}
           />
         </aside>

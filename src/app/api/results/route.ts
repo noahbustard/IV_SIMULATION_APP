@@ -5,12 +5,23 @@ import {
   complianceForElapsed,
   validateParticipant,
 } from "@/app/lib/simulation";
-import type { ComplianceStatus, ExportRow, Participant, ResultsSavePayload, RunType } from "@/app/lib/simulation";
+import type {
+  AdministrationTimeSource,
+  ComplianceStatus,
+  ExportRow,
+  Participant,
+  ResultsSavePayload,
+  RunType,
+} from "@/app/lib/simulation";
 
 export const runtime = "nodejs";
 
 const YES_NO_VALUES = new Set(["Yes", "No"]);
 const COMPLIANCE_VALUES = new Set<ComplianceStatus>(["In compliance", "Not in compliance"]);
+const ADMINISTRATION_TIME_SOURCE_VALUES = new Set<AdministrationTimeSource>([
+  "Administration Instructions",
+  "Additional Drug Information",
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -50,6 +61,7 @@ function parseExportRow(value: unknown, participant: Participant, rowNumber: num
   if (!isRecord(value)) return `Result row ${rowNumber} is malformed.`;
 
   const medicationName = stringField(value, "medicationName");
+  const administrationTimeSource = stringField(value, "administrationTimeSource");
   const medicationAdministrationTimeSeconds = numberField(value, "medicationAdministrationTimeSeconds");
   const requiredMinimumSeconds = numberField(value, "requiredMinimumSeconds");
   const complianceStatus = stringField(value, "complianceStatus");
@@ -57,6 +69,9 @@ function parseExportRow(value: unknown, participant: Participant, rowNumber: num
   const completedAt = stringField(value, "completedAt");
 
   if (!medicationName?.trim()) return `Result row ${rowNumber} is missing a medication name.`;
+  if (!ADMINISTRATION_TIME_SOURCE_VALUES.has(administrationTimeSource as AdministrationTimeSource)) {
+    return `Result row ${rowNumber} has an invalid administration-time source.`;
+  }
   if (medicationAdministrationTimeSeconds === null || medicationAdministrationTimeSeconds < 0) {
     return `Result row ${rowNumber} has an invalid administration time.`;
   }
@@ -79,6 +94,7 @@ function parseExportRow(value: unknown, participant: Participant, rowNumber: num
     areaOfNursing: participant.areaOfNursing.trim(),
     yearsOfNursingExperience: participant.yearsOfNursingExperience.trim(),
     medicationName: medicationName.trim(),
+    administrationTimeSource: administrationTimeSource as AdministrationTimeSource,
     medicationAdministrationTimeSeconds,
     requiredMinimumSeconds,
     complianceStatus: complianceForElapsed(medicationAdministrationTimeSeconds, requiredMinimumSeconds),

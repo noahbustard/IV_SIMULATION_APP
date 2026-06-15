@@ -18,6 +18,7 @@ export type SimulationResultRecord = {
   area_of_nursing: string | null;
   years_of_nursing_experience: string | null;
   medication: string;
+  administration_time_source: ExportRow["administrationTimeSource"];
   administration_time_seconds: number;
   required_minimum_administration_time_seconds: number;
   compliance_status: string;
@@ -82,6 +83,7 @@ function resultRecordFromRow(payload: ResultsSavePayload, row: ExportRow, savedA
     area_of_nursing: cleanOptional(participant.areaOfNursing),
     years_of_nursing_experience: cleanOptional(participant.yearsOfNursingExperience),
     medication: row.medicationName,
+    administration_time_source: row.administrationTimeSource,
     administration_time_seconds: row.medicationAdministrationTimeSeconds,
     required_minimum_administration_time_seconds: row.requiredMinimumSeconds,
     compliance_status: row.complianceStatus,
